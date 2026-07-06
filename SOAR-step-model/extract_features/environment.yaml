@@ -1,0 +1,35 @@
+name: feature_extract
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  # ---- PyTorch (GPU build; a CUDA-capable GPU is required) ----
+  # torch >=2.4 is required by recent transformers (needed for the DINOv3 models)
+  - pytorch=2.4.*
+  - torchvision=0.19.*
+  - pytorch-cuda=12.1
+  # ---- Core scientific / IO ----
+  # numpy must stay <2: torch's compiled extensions break against the NumPy 2.x ABI
+  - numpy<2
+  - pandas
+  - tqdm
+  - pillow
+  - opencv
+  - ffmpeg
+  - pip:
+      # Video decoding
+      - decord
+      # Vision model zoos
+      - timm>=0.9.0
+      # transformers >=4.45 is required for the DINOv3 models
+      - transformers>=4.45
+      - huggingface_hub
+      - safetensors
+      # OpenAI CLIP (pulls in ftfy + regex)
+      - git+https://github.com/openai/CLIP.git
+      - ftfy
+      - regex

@@ -1,0 +1,16 @@
+__pycache__/
+*.mp4
+*.json
+*.pt
+*.pt
+*.jpeg
+dummy_frame_annotations/
+full_video_frames_10fps/
+bleeding_preds/
+spillage_preds/
+thermal_injury_preds/
+postprocessed_predictions/
+ckpts/
+logs/
+wandb/
+work_dirs/
