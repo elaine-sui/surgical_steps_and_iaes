@@ -46,6 +46,17 @@ activeSurgery). Create your own mapping file to match your dataset's classes.
 
 ### Extract framewise features for all videos
 
+Feature extraction (LoVIT):
+- We use LoVIT as our pre-trained image feature extractor. Download the pre-trained encoder (Trained_VIT_Cholec80.pth) from https://github.com/MRUIL/LoViT
+- Convert the checkpoint such that torch.load works (loads the pre-trained weights into the vit_base_patch16_224 architecture):
+
+```
+mkdir models
+python3 convert_lovit_checkpoints.py \
+   --src Trained_VIT_Cholec80.pth \
+   --dst models/step_encoder.pth
+```
+
 Extract one `[N, C]` feature array per video (`N` = number of sampled frames) with a frozen
 image encoder. This is done by the standalone tool in
 [`extract_features/`](extract_features/) — see [extract_features/README.md](extract_features/README.md)
@@ -127,13 +138,13 @@ mkdir models
 ```
 
 Feature extraction (LoVIT):
-- Download the pre-trained encoder `step_encoder.pth` from https://github.com/MRUIL/LoViT to `models/step_encoder.pth`
+- Download the pre-trained encoder (Trained_VIT_Cholec80.pth) from https://github.com/MRUIL/LoViT to `models/step_encoder.pth`
 
 Active surgery detection model:
-- Download the pre-trained active surgery detection model `active_surgery.pyth` from [Google Drive](https://drive.google.com/file/d/1RTi7NjfnOdpYFP0dvSwAlBpVl9edrGfu/view?usp=drive_link) to `models/active_surgery.pyth`
+- Download the pre-trained active surgery detection model `active_surgery_model.pyth` from [Google Drive](https://drive.google.com/file/d/1ksXfQewot5JOo2PlO2mnzYqNAn9X5_Wb/view?usp=drive_link) to `models/active_surgery_model.pyth`
 
 Step model:
-- Download the pre-trained step model `step_model.pyth` from [Google Drive](https://drive.google.com/file/d/1bw03AE_yRKguxO45x5bB8f3eQFyNtvmq/view?usp=drive_link) to `models/step_model.pyth`
+- Download the pre-trained step model `step_model.pyth` from [Google Drive](https://drive.google.com/file/d/1hQhFRD-nZulfT5IATKaXq3WQTXWI4fKS/view?usp=sharing) to `models/step_model.pyth`
 
 Make sure the `models` directory looks as follows:
 ```
