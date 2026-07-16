@@ -157,7 +157,7 @@ python3 evaluate.py \
 ## Inference
 
 ### Download model checkpoints and put them in the following directories:
-Download the zip file of model checkpoints from [Google Drive](https://drive.google.com/file/d/1m5LitVbyeY4_YNy80rFz7s37R-lYRkxX/view?usp=drive_link) and unzip it.
+Download the zip file of model checkpoints from [Google Drive](https://drive.google.com/file/d/1exLB0qatiZcL2-2zmgIkjitLje_Vo8i8/view?usp=sharing) and unzip it.
 
 The directory structure should be as follows:
 ```
