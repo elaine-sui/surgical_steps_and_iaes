@@ -21,6 +21,67 @@ conda activate mmdet
 mim install mmcv==2.1.0 mmdet==3.3.0 mmengine==0.10.7
 ```
 
+## Inference
+
+### Download model checkpoints and put them in the following directories:
+Download the zip file of model checkpoints from [Google Drive](https://drive.google.com/file/d/1exLB0qatiZcL2-2zmgIkjitLje_Vo8i8/view?usp=sharing) and unzip it.
+
+The directory structure should be as follows:
+```
+ckpts/
+|–– ckpt_frame/
+    |–– multiclass_1head_dino_frame.pt
+    |–– thermal_injury_detection_frame.pth
+|–– ckpt_state_change/
+    |–– bleeding_1fps_1.pt
+    |–– bleeding_1fps_2.pt
+    |–– bleeding_2fps_1.pt
+    |–– bleeding_2fps_2.pt
+    |–– bleeding_5fps_1.pt
+    |–– bleeding_5fps_2.pt
+    |–– spillage_1fps_1.pt
+    |–– spillage_1fps_2.pt
+    |–– spillage_2fps_1.pt
+    |–– spillage_2fps_2.pt
+    |–– spillage_5fps_1.pt
+    |–– spillage_5fps_2.pt
+    |–– thermal_injury_2fps_1.pt
+    |–– thermal_injury_2fps_2.pt
+    |–– thermal_injury_5fps_1.pt
+    |–– thermal_injury_5fps_2.pt
+    |–– thermal_injury_10fps_1.pt
+    |–– thermal_injury_10fps_2.pt
+```
+
+### Running the error detection pipeline
+Run this line to run the error detection pipeline:
+```
+bash ./scripts/run_single_video.sh /path/to/[video_id].mp4
+```
+
+**Input:** video path (`/path/to/[video_id].mp4`)
+    - Sample video: [here](https://drive.google.com/file/d/1JZsENae-vtagjOr72rdoqo6SJ7542fp2/view?usp=drive_link)
+
+**Output:** CSV with the detected errors (`postprocessed_predictions/[video_id].csv`)
+    - The output columns are: ['clip_id', 'annotation_type', 'label', 'duration', 'fps', 'start_frame', 'end_frame', 'start_time', 'end_time', 'score', 'video_path']
+
+
+This script does the following in sequence for a single video:
+- Extracts frames from `/path/to/[video_id].mp4` at 10 fps
+- Runs the bleeding detection model
+- Runs the bile spillage detection model
+- Runs the thermal injury detection model
+- Post-processes all the error predictions into a single CSV
+
+Note: the models that detect each error are independent of one another and could be parallelized by running it on multiple GPUs simultaneously.
+
+### More detail on how the error model works
+To detect a specific error, we first
+1. Classify each frame as having blood/bile/thermal injury with an ML model
+2. Sample candidate clips from the full-length video where an error is most likely to occur
+3. Classify each candidate clip with 6 ML models (2 each for 3 different frame rates) and combine the model predictions (Note: these models are run in sequence for simplicity, but could be parallelized)
+4. Post-process the results and only keep the ones over a certain threshold (0.4 for bleeding ; 0.45 for bile spillage; 0.5 for thermal injury)
+
 ## Training the model components
 The error detection pipeline is built from several independently trained models. There are two families:
 - **Frame-level models** classify or detect the error in a single frame. These are: (1) the blood and bile frame classifier, and (2) the thermal injury detector.
@@ -153,64 +214,3 @@ python3 evaluate.py \
     --split testing \
     --metrics_dir metrics
 ```
-
-## Inference
-
-### Download model checkpoints and put them in the following directories:
-Download the zip file of model checkpoints from [Google Drive](https://drive.google.com/file/d/1exLB0qatiZcL2-2zmgIkjitLje_Vo8i8/view?usp=sharing) and unzip it.
-
-The directory structure should be as follows:
-```
-ckpts/
-|–– ckpt_frame/
-    |–– multiclass_1head_dino_frame.pt
-    |–– thermal_injury_detection_frame.pth
-|–– ckpt_state_change/
-    |–– bleeding_1fps_1.pt
-    |–– bleeding_1fps_2.pt
-    |–– bleeding_2fps_1.pt
-    |–– bleeding_2fps_2.pt
-    |–– bleeding_5fps_1.pt
-    |–– bleeding_5fps_2.pt
-    |–– spillage_1fps_1.pt
-    |–– spillage_1fps_2.pt
-    |–– spillage_2fps_1.pt
-    |–– spillage_2fps_2.pt
-    |–– spillage_5fps_1.pt
-    |–– spillage_5fps_2.pt
-    |–– thermal_injury_2fps_1.pt
-    |–– thermal_injury_2fps_2.pt
-    |–– thermal_injury_5fps_1.pt
-    |–– thermal_injury_5fps_2.pt
-    |–– thermal_injury_10fps_1.pt
-    |–– thermal_injury_10fps_2.pt
-```
-
-### Running the error detection pipeline
-Run this line to run the error detection pipeline:
-```
-bash ./scripts/run_single_video.sh /path/to/[video_id].mp4
-```
-
-**Input:** video path (`/path/to/[video_id].mp4`)
-    - Sample video: [here](https://drive.google.com/file/d/1JZsENae-vtagjOr72rdoqo6SJ7542fp2/view?usp=drive_link)
-
-**Output:** CSV with the detected errors (`postprocessed_predictions/[video_id].csv`)
-    - The output columns are: ['clip_id', 'annotation_type', 'label', 'duration', 'fps', 'start_frame', 'end_frame', 'start_time', 'end_time', 'score', 'video_path']
-
-
-This script does the following in sequence for a single video:
-- Extracts frames from `/path/to/[video_id].mp4` at 10 fps
-- Runs the bleeding detection model
-- Runs the bile spillage detection model
-- Runs the thermal injury detection model
-- Post-processes all the error predictions into a single CSV
-
-Note: the models that detect each error are independent of one another and could be parallelized by running it on multiple GPUs simultaneously.
-
-### More detail on how the error model works
-To detect a specific error, we first
-1. Classify each frame as having blood/bile/thermal injury with an ML model
-2. Sample candidate clips from the full-length video where an error is most likely to occur
-3. Classify each candidate clip with 6 ML models (2 each for 3 different frame rates) and combine the model predictions (Note: these models are run in sequence for simplicity, but could be parallelized)
-4. Post-process the results and only keep the ones over a certain threshold (0.4 for bleeding ; 0.45 for bile spillage; 0.5 for thermal injury)

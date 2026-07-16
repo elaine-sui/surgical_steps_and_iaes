@@ -11,6 +11,73 @@ conda env create -f environment.yml
 conda activate step_model
 ```
 
+## Inference
+
+### Download pre-trained models
+
+Make models subdirectory
+```
+mkdir models
+```
+
+Feature extraction (LoVIT):
+- Download the pre-trained encoder (Trained_VIT_Cholec80.pth) from https://github.com/MRUIL/LoViT
+- Convert the checkpoint such that torch.load works (loads the pre-trained weights into the vit_base_patch16_224 architecture):
+
+```
+mkdir models
+python3 convert_lovit_checkpoints.py \
+   --src Trained_VIT_Cholec80.pth \
+   --dst models/step_encoder.pth
+```
+
+Active surgery detection model:
+- Download the pre-trained active surgery detection model `active_surgery_model.pyth` from [Google Drive](https://drive.google.com/file/d/1ksXfQewot5JOo2PlO2mnzYqNAn9X5_Wb/view?usp=drive_link) to `models/active_surgery_model.pyth`
+
+Step model:
+- Download the pre-trained step model `step_model.pyth` from [Google Drive](https://drive.google.com/file/d/1hQhFRD-nZulfT5IATKaXq3WQTXWI4fKS/view?usp=sharing) to `models/step_model.pyth`
+
+Make sure the `models` directory looks as follows:
+```
+models/
+|–– active_surgery_model.pyth
+|–– step_encoder.pth
+|–– step_model.pyth
+```
+
+### Prepare the paths
+Optional paths to replace in the script `scripts/run_all.sh`:
+- features_dir: Directory where features (output of the step encoder) should be saved
+- encoder_path: Path to the step_encoder checkpoint
+- step_model_path: Path to the step_model checkpoint
+- active_surgery_model_path: Path to the active surgery detection model checkpoint
+- active_surgery_output_dir: Directory where the active surgery model outputs will be saved
+- outputs: Directory where the step model outputs will be saved
+
+### Running the model
+Run all the scripts in sequence
+```
+bash ./scripts/run_inference.sh /path/to/video_id.mp4 /path/to/models \[FEATURE_EXTRACTOR_NAME] [FEATURE_EXTRACTOR_ARCHITECTURE]
+```
+Note: `[FEATURE_EXTRACTOR_NAME]` and `[FEATURE_EXTRACTOR_ARCHITECTURE]` are what you would pass to --model_name and --model_arch when running `python3 extract_features/extract_tad_feature.py`
+
+This script does the following:
+- Extract frame-level features at 1 fps (LoVIT)
+- Predicts the start and end of active surgery in the video (Active Surgery Detection Model)
+- Predicts the step for each frame with the step encoder (LTContext)
+- Post-processes the model outputs
+
+
+### Model outputs
+All step model outputs can be found in `outputs/results/preds/video_name`:
+- pred.npy: NumPy array of the predictions
+- pred.csv: Formatted CSV of the predictions (step names) with the columns: clip_id,annotation_type,label,duration,fps,start_time,end_time
+- pred.png: Image of the temporal segmentations
+- legend.png: Legend corresponding to pred.png
+
+All outputs related to active surgery detection are found in `outputs_active_surgery/results/preds/video_name`
+- pred.csv: Formatted CSV of the predictions (background vs. active surgery) with the columns: clip_id,annotation_type,label,duration,fps,start_time,end_time
+
 ## Training
 
 Training has three stages: (1) extract per-frame features for every video, (2) train the
@@ -127,62 +194,3 @@ as background.
 Settings live in
 [`step_model/configs/LTContext_lovit_active_surgery.yaml`](step_model/configs/LTContext_lovit_active_surgery.yaml).
 Checkpoints and metrics are written under `output_dir`.
-
-## Inference
-
-### Download pre-trained models
-
-Make models subdirectory
-```
-mkdir models
-```
-
-Feature extraction (LoVIT):
-- Download the pre-trained encoder (Trained_VIT_Cholec80.pth) from https://github.com/MRUIL/LoViT to `models/step_encoder.pth`
-
-Active surgery detection model:
-- Download the pre-trained active surgery detection model `active_surgery_model.pyth` from [Google Drive](https://drive.google.com/file/d/1ksXfQewot5JOo2PlO2mnzYqNAn9X5_Wb/view?usp=drive_link) to `models/active_surgery_model.pyth`
-
-Step model:
-- Download the pre-trained step model `step_model.pyth` from [Google Drive](https://drive.google.com/file/d/1hQhFRD-nZulfT5IATKaXq3WQTXWI4fKS/view?usp=sharing) to `models/step_model.pyth`
-
-Make sure the `models` directory looks as follows:
-```
-models/
-|–– active_surgery_model.pyth
-|–– step_encoder.pth
-|–– step_model.pyth
-```
-
-### Prepare the paths
-Optional paths to replace in the script `scripts/run_all.sh`:
-- features_dir: Directory where features (output of the step encoder) should be saved
-- encoder_path: Path to the step_encoder checkpoint
-- step_model_path: Path to the step_model checkpoint
-- active_surgery_model_path: Path to the active surgery detection model checkpoint
-- active_surgery_output_dir: Directory where the active surgery model outputs will be saved
-- outputs: Directory where the step model outputs will be saved
-
-### Running the model
-Run all the scripts in sequence
-```
-bash ./scripts/run_inference.sh /path/to/video_id.mp4 /path/to/models \[FEATURE_EXTRACTOR_NAME] [FEATURE_EXTRACTOR_ARCHITECTURE]
-```
-Note: `[FEATURE_EXTRACTOR_NAME]` and `[FEATURE_EXTRACTOR_ARCHITECTURE]` are what you would pass to --model_name and --model_arch when running `python3 extract_features/extract_tad_feature.py`
-
-This script does the following:
-- Extract frame-level features at 1 fps (LoVIT)
-- Predicts the start and end of active surgery in the video (Active Surgery Detection Model)
-- Predicts the step for each frame with the step encoder (LTContext)
-- Post-processes the model outputs
-
-
-### Model outputs
-All step model outputs can be found in `outputs/results/preds/video_name`:
-- pred.npy: NumPy array of the predictions
-- pred.csv: Formatted CSV of the predictions (step names) with the columns: clip_id,annotation_type,label,duration,fps,start_time,end_time
-- pred.png: Image of the temporal segmentations
-- legend.png: Legend corresponding to pred.png
-
-All outputs related to active surgery detection are found in `outputs_active_surgery/results/preds/video_name`
-- pred.csv: Formatted CSV of the predictions (background vs. active surgery) with the columns: clip_id,annotation_type,label,duration,fps,start_time,end_time
